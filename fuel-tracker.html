@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#1D9E75">
+<title>บันทึกค่าน้ำมัน</title>
+<style>
+  :root {
+    --teal: #1D9E75;
+    --teal-dark: #0F6E56;
+    --teal-light: #E1F5EE;
+    --teal-text: #085041;
+    --bg: #F5F5F5;
+    --card: #FFFFFF;
+    --border: rgba(0,0,0,0.10);
+    --text: #1A1A1A;
+    --text2: #6B6B6B;
+    --text3: #9B9B9B;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 32px; }
+
+  .topbar { background: var(--teal); color: white; padding: 16px 16px 14px; display: flex; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 10; }
+  .topbar-icon { font-size: 22px; }
+  .topbar h1 { font-size: 18px; font-weight: 600; }
+  .topbar-sub { font-size: 12px; opacity: 0.8; margin-left: auto; }
+
+  .container { padding: 12px 12px 0; max-width: 480px; margin: 0 auto; }
+
+  .stats-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 12px; }
+  .stat-card { background: var(--card); border-radius: var(--radius-sm); padding: 12px 14px; border: 0.5px solid var(--border); }
+  .stat-label { font-size: 11px; color: var(--text2); margin-bottom: 4px; }
+  .stat-value { font-size: 20px; font-weight: 600; color: var(--text); }
+  .stat-unit { font-size: 11px; font-weight: 400; color: var(--text2); }
+
+  .card { background: var(--card); border-radius: var(--radius); border: 0.5px solid var(--border); padding: 14px 14px; margin-bottom: 12px; }
+  .card-title { font-size: 13px; font-weight: 600; color: var(--text2); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+
+  .price-board-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .price-board-title { font-size: 13px; font-weight: 600; color: var(--text2); }
+  .price-date { font-size: 11px; color: var(--text3); }
+  .price-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+  .price-item { background: var(--bg); border-radius: var(--radius-sm); padding: 8px 10px; display: flex; justify-content: space-between; align-items: center; }
+  .pi-name { font-size: 12px; color: var(--text2); }
+  .pi-val { font-size: 13px; font-weight: 600; color: var(--teal); }
+
+  .section-label { font-size: 12px; color: var(--text2); margin-bottom: 4px; display: block; }
+  .input-field { width: 100%; font-size: 15px; padding: 10px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--card); color: var(--text); appearance: none; -webkit-appearance: none; }
+  .input-field:focus { outline: none; border-color: var(--teal); }
+  select.input-field { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B6B6B' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+  .locked-field { width: 100%; font-size: 15px; padding: 10px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: #F0FDF9; color: var(--teal); font-weight: 600; display: flex; align-items: center; justify-content: space-between; min-height: 44px; }
+  .locked-muted { color: var(--text3); font-weight: 400; }
+  .lock-icon { font-size: 14px; color: var(--text3); }
+  .src-note { font-size: 11px; color: var(--text3); margin-top: 3px; }
+
+  .field-group { margin-bottom: 10px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+
+  .toggle-wrap { display: flex; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 12px; }
+  .toggle-btn { flex: 1; padding: 9px 8px; font-size: 13px; border: none; background: var(--card); color: var(--text2); cursor: pointer; font-weight: 500; }
+  .toggle-btn.active { background: var(--teal); color: white; }
+
+  .preview-box { background: var(--teal-light); border-radius: var(--radius-sm); padding: 12px 14px; margin: 10px 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .preview-item { text-align: center; }
+  .preview-label { font-size: 10px; color: var(--teal-text); margin-bottom: 3px; }
+  .preview-val { font-size: 15px; font-weight: 600; color: var(--teal); }
+
+  .btn-save { width: 100%; padding: 13px; background: var(--teal); color: white; border: none; border-radius: var(--radius-sm); font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 4px; }
+  .btn-save:active { background: var(--teal-dark); }
+
+  .calc-card { background: var(--card); border-radius: var(--radius); border: 0.5px solid var(--border); padding: 14px; margin-bottom: 12px; }
+  .eff-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .eff-label { font-size: 13px; color: var(--text2); flex: 1; }
+  .eff-input { width: 70px; font-size: 15px; padding: 7px 10px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--card); color: var(--text); text-align: center; }
+  .eff-input:focus { outline: none; border-color: var(--teal); }
+  .eff-unit { font-size: 12px; color: var(--text3); white-space: nowrap; }
+  .cost-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .cost-item { background: var(--bg); border-radius: var(--radius-sm); padding: 10px 8px; text-align: center; }
+  .ci-label { font-size: 10px; color: var(--text2); margin-bottom: 4px; }
+  .ci-val { font-size: 16px; font-weight: 600; color: var(--text); }
+  .ci-unit { font-size: 10px; color: var(--text3); }
+
+  .history-title { font-size: 14px; font-weight: 600; color: var(--text2); margin-bottom: 8px; padding: 0 2px; }
+  .entry-item { background: var(--card); border-radius: var(--radius); border: 0.5px solid var(--border); padding: 12px 14px; margin-bottom: 8px; display: flex; gap: 12px; align-items: flex-start; }
+  .entry-dot { width: 34px; height: 34px; border-radius: 50%; background: var(--teal-light); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+  .entry-info { flex: 1; min-width: 0; }
+  .entry-top { display: flex; justify-content: space-between; align-items: baseline; }
+  .entry-date { font-size: 13px; font-weight: 600; }
+  .entry-price { font-size: 16px; font-weight: 700; color: var(--teal); }
+  .entry-detail { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .entry-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
+  .badge { font-size: 11px; padding: 2px 8px; border-radius: 99px; }
+  .b91 { background: #E6F1FB; color: #0C447C; }
+  .b95 { background: #EEEDFE; color: #3C3489; }
+  .bd { background: #FAEEDA; color: #633806; }
+  .be20 { background: #EAF3DE; color: #27500A; }
+  .ecost-badge { font-size: 11px; padding: 2px 8px; border-radius: 99px; background: var(--teal-light); color: var(--teal-dark); }
+  .btn-del { background: none; border: none; color: var(--text3); font-size: 18px; padding: 2px 4px; cursor: pointer; flex-shrink: 0; line-height: 1; }
+
+  .bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .bar-label { font-size: 11px; color: var(--text2); width: 76px; flex-shrink: 0; text-align: right; }
+  .bar-track { flex: 1; height: 14px; background: var(--bg); border-radius: 99px; overflow: hidden; }
+  .bar-fill { height: 100%; background: var(--teal); border-radius: 99px; }
+  .bar-val { font-size: 11px; color: var(--text2); width: 58px; flex-shrink: 0; }
+
+  .empty-state { text-align: center; padding: 28px 16px; color: var(--text3); font-size: 14px; }
+  .empty-icon { font-size: 36px; margin-bottom: 8px; }
+
+  .update-banner { background: #FFF8E1; border: 1px solid #FFD54F; border-radius: var(--radius-sm); padding: 10px 14px; margin-bottom: 12px; font-size: 13px; color: #5D4037; display: flex; justify-content: space-between; align-items: center; }
+  .btn-update { background: #FF8F00; color: white; border: none; border-radius: 6px; padding: 5px 10px; font-size: 12px; font-weight: 600; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="topbar-icon">⛽</span>
+  <h1>บันทึกค่าน้ำมัน</h1>
+  <span class="topbar-sub" id="topbar-date"></span>
+</div>
+
+<div class="container">
+
+  <div id="update-banner" style="display:none" class="update-banner">
+    <span>⚠️ ราคาน้ำมันอาจมีการเปลี่ยนแปลง</span>
+    <button class="btn-update" onclick="promptUpdatePrices()">อัปเดตราคา</button>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-label">ค่าใช้จ่ายรวม</div><div class="stat-value" id="st-total">0 <span class="stat-unit">บาท</span></div></div>
+    <div class="stat-card"><div class="stat-label">ลิตรรวม</div><div class="stat-value" id="st-liters">0 <span class="stat-unit">ลิตร</span></div></div>
+    <div class="stat-card"><div class="stat-label">ต้นทุน/กม.</div><div class="stat-value" id="st-perkm">- <span class="stat-unit">บ./กม.</span></div></div>
+    <div class="stat-card"><div class="stat-label">จำนวนครั้ง</div><div class="stat-value" id="st-count">0 <span class="stat-unit">ครั้ง</span></div></div>
+  </div>
+
+  <div class="card">
+    <div class="price-board-header">
+      <span class="price-board-title">🏪 ราคาหน้าปั้ม ปตท.</span>
+      <span class="price-date" id="price-date">อัปเดต 6 มิ.ย. 2569</span>
+    </div>
+    <div class="price-grid" id="price-grid"></div>
+  </div>
+
+  <div class="calc-card">
+    <div class="card-title">🧮 คำนวณต้นทุนการใช้งาน</div>
+    <div class="eff-row">
+      <span class="eff-label">อัตราสิ้นเปลืองรถ</span>
+      <input class="eff-input" type="number" id="efficiency" value="15" min="1" max="99" step="0.5" inputmode="decimal" oninput="calcCost(); calcPreview()">
+      <span class="eff-unit">กม./ลิตร</span>
+    </div>
+    <div class="field-group">
+      <label class="section-label">เลือกประเภทน้ำมัน</label>
+      <select class="input-field" id="calc-fuel" onchange="calcCost()">
+        <option value="gasohol91">แก๊สโซฮอล์ 91</option>
+        <option value="gasohol95">แก๊สโซฮอล์ 95</option>
+        <option value="diesel">ดีเซล</option>
+        <option value="e20">E20</option>
+      </select>
+    </div>
+    <div class="cost-grid">
+      <div class="cost-item"><div class="ci-label">ต้นทุน/กม.</div><div class="ci-val" id="cc-perkm">-</div><div class="ci-unit">บาท/กม.</div></div>
+      <div class="cost-item"><div class="ci-label">ต้นทุน/100 กม.</div><div class="ci-val" id="cc-per100">-</div><div class="ci-unit">บาท</div></div>
+      <div class="cost-item"><div class="ci-label">วิ่ง 1,000 กม.</div><div class="ci-val" id="cc-per1000">-</div><div class="ci-unit">บาท</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">➕ เพิ่มรายการใหม่</div>
+
+    <div class="form-row">
+      <div class="field-group" style="margin-bottom:0">
+        <label class="section-label">วันที่</label>
+        <input class="input-field" type="date" id="inp-date">
+      </div>
+      <div class="field-group" style="margin-bottom:0">
+        <label class="section-label">ประเภทน้ำมัน</label>
+        <select class="input-field" id="inp-fuel" onchange="onFuelChange()">
+          <option value="gasohol91">แก๊สโซฮอล์ 91</option>
+          <option value="gasohol95">แก๊สโซฮอล์ 95</option>
+          <option value="diesel">ดีเซล</option>
+          <option value="e20">E20</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label class="section-label">วิธีกรอกข้อมูล</label>
+      <div class="toggle-wrap">
+        <button class="toggle-btn active" id="btn-mode-amount" onclick="setMode('amount')">💵 ระบุจำนวนเงิน</button>
+        <button class="toggle-btn" id="btn-mode-liters" onclick="setMode('liters')">🔢 ระบุจำนวนลิตร</button>
+      </div>
+    </div>
+
+    <div id="mode-amount-fields">
+      <div class="form-row">
+        <div class="field-group" style="margin-bottom:0">
+          <label class="section-label">จำนวนเงินที่เติม (บาท)</label>
+          <input class="input-field" type="number" id="inp-amount" placeholder="500" min="0" step="1" inputmode="decimal" oninput="calcPreview()">
+        </div>
+        <div class="field-group" style="margin-bottom:0">
+          <label class="section-label">จำนวนลิตรที่ได้ 🔒</label>
+          <div class="locked-field">
+            <span id="liters-from-amount" class="locked-muted">กรอกจำนวนเงิน...</span>
+          </div>
+          <div class="src-note">คำนวณจากราคา ปตท. วันนี้</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="mode-liters-fields" style="display:none">
+      <div class="form-row">
+        <div class="field-group" style="margin-bottom:0">
+          <label class="section-label">จำนวนลิตร</label>
+          <input class="input-field" type="number" id="inp-liters" placeholder="35.5" min="0" step="0.1" inputmode="decimal" oninput="calcPreview()">
+        </div>
+        <div class="field-group" style="margin-bottom:0">
+          <label class="section-label">ยอดรวม (บาท) 🔒</label>
+          <div class="locked-field">
+            <span id="amount-from-liters" class="locked-muted">กรอกจำนวนลิตร...</span>
+          </div>
+          <div class="src-note">คำนวณจากราคา ปตท. วันนี้</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="field-group" style="margin-top:10px">
+      <label class="section-label">ราคาต่อลิตร (บาท) 🔒</label>
+      <div class="locked-field">
+        <span id="price-display-val">กำลังโหลด...</span>
+      </div>
+      <div class="src-note">อ้างอิงราคา ปตท. วันนี้ ไม่สามารถแก้ไขได้</div>
+    </div>
+
+    <div class="field-group">
+      <label class="section-label">เลขไมล์ (กม.) — ไม่บังคับ</label>
+      <input class="input-field" type="number" id="inp-odo" placeholder="12500" min="0" step="1" inputmode="numeric">
+    </div>
+
+    <div class="preview-box" id="cost-preview" style="display:none">
+      <div class="preview-item"><div class="preview-label">ยอดเงิน</div><div class="preview-val" id="preview-total">-</div></div>
+      <div class="preview-item"><div class="preview-label">จำนวนลิตร</div><div class="preview-val" id="preview-liters">-</div></div>
+      <div class="preview-item"><div class="preview-label">ต้นทุน/กม.</div><div class="preview-val" id="preview-perkm">-</div></div>
+    </div>
+
+    <button class="btn-save" onclick="addEntry()">✅ บันทึกรายการ</button>
+  </div>
+
+  <div id="chart-section" style="display:none">
+    <div class="card">
+      <div class="card-title">📊 ค่าใช้จ่ายตามประเภทน้ำมัน</div>
+      <div id="chart-bars"></div>
+    </div>
+  </div>
+
+  <div class="history-title">📋 ประวัติการเติม</div>
+  <div id="entry-list">
+    <div class="empty-state"><div class="empty-icon">⛽</div>ยังไม่มีรายการ<br>เพิ่มรายการแรกได้เลย!</div>
+  </div>
+
+</div>
+
+<script>
+const SKEY = 'fuel_entries_v1';
+const PKEY = 'fuel_prices_v1';
+
+const DEFAULT_PRICES = { gasohol91: 42.23, gasohol95: 42.60, diesel: 40.80, e20: 37.60 };
+const DEFAULT_DATE = '6 มิ.ย. 2569';
+
+const fuelNames = { gasohol91: 'แก๊สโซฮอล์ 91', gasohol95: 'แก๊สโซฮอล์ 95', diesel: 'ดีเซล', e20: 'E20' };
+const fuelBadge = { gasohol91: 'b91', gasohol95: 'b95', diesel: 'bd', e20: 'be20' };
+
+let entries = [];
+let livePrices = { ...DEFAULT_PRICES };
+let priceDate = DEFAULT_DATE;
+let inputMode = 'amount';
+
+function loadData() {
+  try {
+    const e = localStorage.getItem(SKEY);
+    if (e) entries = JSON.parse(e);
+    const p = localStorage.getItem(PKEY);
+    if (p) { const d = JSON.parse(p); livePrices = d.prices; priceDate = d.dateLabel; }
+  } catch(e) {}
+}
+
+function saveEntries() {
+  try { localStorage.setItem(SKEY, JSON.stringify(entries)); } catch(e) {}
+}
+
+function savePrices() {
+  try { localStorage.setItem(PKEY, JSON.stringify({ prices: livePrices, dateLabel: priceDate, savedAt: new Date().toISOString() })); } catch(e) {}
+}
+
+function checkPriceAge() {
+  try {
+    const p = localStorage.getItem(PKEY);
+    if (!p) return;
+    const d = JSON.parse(p);
+    if (!d.savedAt) return;
+    const days = (Date.now() - new Date(d.savedAt).getTime()) / 86400000;
+    if (days >= 1) document.getElementById('update-banner').style.display = 'flex';
+  } catch(e) {}
+}
+
+function promptUpdatePrices() {
+  const g91 = prompt('ราคาแก๊สโซฮอล์ 91 (บาท/ลิตร)', livePrices.gasohol91);
+  if (g91 === null) return;
+  const g95 = prompt('ราคาแก๊สโซฮอล์ 95 (บาท/ลิตร)', livePrices.gasohol95);
+  if (g95 === null) return;
+  const diesel = prompt('ราคาดีเซล (บาท/ลิตร)', livePrices.diesel);
+  if (diesel === null) return;
+  const e20 = prompt('ราคา E20 (บาท/ลิตร)', livePrices.e20);
+  if (e20 === null) return;
+  const dateStr = prompt('วันที่อัปเดต เช่น 11 มิ.ย. 2569', priceDate);
+  if (dateStr === null) return;
+  livePrices = { gasohol91: parseFloat(g91)||livePrices.gasohol91, gasohol95: parseFloat(g95)||livePrices.gasohol95, diesel: parseFloat(diesel)||livePrices.diesel, e20: parseFloat(e20)||livePrices.e20 };
+  priceDate = dateStr || priceDate;
+  savePrices();
+  document.getElementById('update-banner').style.display = 'none';
+  renderPriceBoard();
+  onFuelChange();
+  calcCost();
+}
+
+function renderPriceBoard() {
+  document.getElementById('price-date').textContent = 'อัปเดต ' + priceDate;
+  document.getElementById('price-grid').innerHTML = ['gasohol91','gasohol95','diesel','e20'].map(k =>
+    `<div class="price-item"><span class="pi-name">${fuelNames[k]}</span><span class="pi-val">${livePrices[k].toFixed(2)} บ.</span></div>`
+  ).join('');
+}
+
+function onFuelChange() {
+  const ft = document.getElementById('inp-fuel').value;
+  const p = livePrices[ft];
+  document.getElementById('price-display-val').textContent = p.toFixed(2) + ' บาท/ลิตร';
+  calcPreview();
+}
+
+function setMode(mode) {
+  inputMode = mode;
+  document.getElementById('btn-mode-amount').classList.toggle('active', mode==='amount');
+  document.getElementById('btn-mode-liters').classList.toggle('active', mode==='liters');
+  document.getElementById('mode-amount-fields').style.display = mode==='amount' ? '' : 'none';
+  document.getElementById('mode-liters-fields').style.display = mode==='liters' ? '' : 'none';
+  document.getElementById('inp-amount').value = '';
+  document.getElementById('inp-liters').value = '';
+  resetCalcFields();
+  document.getElementById('cost-preview').style.display = 'none';
+}
+
+function resetCalcFields() {
+  const la = document.getElementById('liters-from-amount');
+  la.textContent = 'กรอกจำนวนเงิน...'; la.className = 'locked-muted';
+  const al = document.getElementById('amount-from-liters');
+  al.textContent = 'กรอกจำนวนลิตร...'; al.className = 'locked-muted';
+}
+
+function calcCost() {
+  const eff = parseFloat(document.getElementById('efficiency').value);
+  const ft = document.getElementById('calc-fuel').value;
+  const p = livePrices[ft];
+  if (!p || !eff || eff<=0) { ['cc-perkm','cc-per100','cc-per1000'].forEach(id=>document.getElementById(id).textContent='-'); return; }
+  const perkm = p / eff;
+  document.getElementById('cc-perkm').textContent = perkm.toFixed(2);
+  document.getElementById('cc-per100').textContent = (perkm*100).toFixed(2);
+  document.getElementById('cc-per1000').textContent = Math.round(perkm*1000).toLocaleString('th-TH');
+}
+
+function calcPreview() {
+  const ft = document.getElementById('inp-fuel').value;
+  const p = livePrices[ft];
+  const eff = parseFloat(document.getElementById('efficiency').value);
+  const preview = document.getElementById('cost-preview');
+  let total = 0, liters = 0;
+
+  if (inputMode === 'amount') {
+    const amount = parseFloat(document.getElementById('inp-amount').value);
+    if (!p || isNaN(amount) || amount<=0) { const el=document.getElementById('liters-from-amount'); el.textContent='กรอกจำนวนเงิน...'; el.className='locked-muted'; preview.style.display='none'; return; }
+    liters = amount / p; total = amount;
+    const el = document.getElementById('liters-from-amount');
+    el.textContent = liters.toFixed(2) + ' ลิตร'; el.className = '';
+  } else {
+    const l = parseFloat(document.getElementById('inp-liters').value);
+    if (!p || isNaN(l) || l<=0) { const el=document.getElementById('amount-from-liters'); el.textContent='กรอกจำนวนลิตร...'; el.className='locked-muted'; preview.style.display='none'; return; }
+    liters = l; total = l * p;
+    const el = document.getElementById('amount-from-liters');
+    el.textContent = total.toFixed(2) + ' บาท'; el.className = '';
+  }
+
+  const perkm = (eff>0) ? p/eff : null;
+  document.getElementById('preview-total').textContent = total.toFixed(2);
+  document.getElementById('preview-liters').textContent = liters.toFixed(2);
+  document.getElementById('preview-perkm').textContent = perkm ? perkm.toFixed(2) : '-';
+  preview.style.display = 'grid';
+}
+
+function addEntry() {
+  const date = document.getElementById('inp-date').value;
+  const fuelType = document.getElementById('inp-fuel').value;
+  const odo = document.getElementById('inp-odo').value;
+  const pricePerLiter = livePrices[fuelType];
+  const eff = parseFloat(document.getElementById('efficiency').value);
+  if (!date) { alert('กรุณากรอกวันที่'); return; }
+  let liters, total;
+  if (inputMode === 'amount') {
+    const amount = parseFloat(document.getElementById('inp-amount').value);
+    if (isNaN(amount)||amount<=0) { alert('กรุณากรอกจำนวนเงินที่เติม'); return; }
+    liters = amount / pricePerLiter; total = amount;
+  } else {
+    const l = parseFloat(document.getElementById('inp-liters').value);
+    if (isNaN(l)||l<=0) { alert('กรุณากรอกจำนวนลิตร'); return; }
+    liters = l; total = l * pricePerLiter;
+  }
+  const perkm = (eff>0) ? parseFloat((pricePerLiter/eff).toFixed(4)) : null;
+  entries.push({ id: Date.now().toString(), date, fuelType, liters: parseFloat(liters.toFixed(4)), pricePerLiter, total: parseFloat(total.toFixed(2)), odometer: odo?parseInt(odo):null, perkm, efficiency: eff||null });
+  saveEntries();
+  document.getElementById('inp-amount').value='';
+  document.getElementById('inp-liters').value='';
+  document.getElementById('inp-odo').value='';
+  resetCalcFields();
+  document.getElementById('cost-preview').style.display='none';
+  renderAll();
+}
+
+function delEntry(id) {
+  if (!confirm('ลบรายการนี้?')) return;
+  entries = entries.filter(e=>e.id!==id);
+  saveEntries();
+  renderAll();
+}
+
+function fmt(n) { return n.toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtDate(s) { return new Date(s).toLocaleDateString('th-TH',{year:'numeric',month:'short',day:'numeric'}); }
+
+function renderAll() {
+  const sorted = [...entries].sort((a,b)=>b.date.localeCompare(a.date));
+  const total = entries.reduce((s,e)=>s+e.total,0);
+  const totalLiters = entries.reduce((s,e)=>s+e.liters,0);
+  const effEntries = entries.filter(e=>e.perkm);
+  const avgPerkm = effEntries.length ? effEntries.reduce((s,e)=>s+e.perkm,0)/effEntries.length : null;
+  document.getElementById('st-total').innerHTML = fmt(total)+' <span class="stat-unit">บาท</span>';
+  document.getElementById('st-liters').innerHTML = totalLiters.toFixed(2)+' <span class="stat-unit">ลิตร</span>';
+  document.getElementById('st-perkm').innerHTML = (avgPerkm?avgPerkm.toFixed(2):'-')+' <span class="stat-unit">บ./กม.</span>';
+  document.getElementById('st-count').innerHTML = entries.length+' <span class="stat-unit">ครั้ง</span>';
+
+  const listEl = document.getElementById('entry-list');
+  if (!sorted.length) {
+    listEl.innerHTML='<div class="empty-state"><div class="empty-icon">⛽</div>ยังไม่มีรายการ<br>เพิ่มรายการแรกได้เลย!</div>';
+  } else {
+    listEl.innerHTML = sorted.map(e=>`
+      <div class="entry-item">
+        <div class="entry-dot">⛽</div>
+        <div class="entry-info">
+          <div class="entry-top">
+            <span class="entry-date">${fmtDate(e.date)}</span>
+            <span class="entry-price">฿${fmt(e.total)}</span>
+          </div>
+          <div class="entry-detail">${e.liters.toFixed(2)} ล. × ฿${e.pricePerLiter.toFixed(2)}/ล.${e.odometer?' · ไมล์ '+e.odometer.toLocaleString('th-TH')+' กม.':''}</div>
+          <div class="entry-tags">
+            <span class="badge ${fuelBadge[e.fuelType]}">${fuelNames[e.fuelType]}</span>
+            ${e.perkm?`<span class="ecost-badge">🛣 ${e.perkm.toFixed(2)} บ./กม. · ~${Math.round(e.liters*(e.pricePerLiter/e.perkm)).toLocaleString('th-TH')} กม.</span>`:''}
+          </div>
+        </div>
+        <button class="btn-del" onclick="delEntry('${e.id}')">🗑</button>
+      </div>
+    `).join('');
+  }
+
+  const cs = document.getElementById('chart-section');
+  if (!entries.length) { cs.style.display='none'; return; }
+  cs.style.display='block';
+  const byType={};
+  for (const e of entries) byType[e.fuelType]=(byType[e.fuelType]||0)+e.total;
+  const max=Math.max(...Object.values(byType));
+  document.getElementById('chart-bars').innerHTML=['gasohol91','gasohol95','diesel','e20'].filter(k=>byType[k]).map(k=>`
+    <div class="bar-row">
+      <span class="bar-label">${fuelNames[k]}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.round(byType[k]/max*100)}%"></div></div>
+      <span class="bar-val">฿${Math.round(byType[k]).toLocaleString('th-TH')}</span>
+    </div>
+  `).join('');
+}
+
+function init() {
+  const today = new Date();
+  document.getElementById('topbar-date').textContent = today.toLocaleDateString('th-TH',{day:'numeric',month:'short'});
+  document.getElementById('inp-date').value = today.toISOString().split('T')[0];
+  loadData();
+  renderPriceBoard();
+  onFuelChange();
+  calcCost();
+  renderAll();
+  checkPriceAge();
+}
+
+init();
+</script>
+</body>
+</html>
